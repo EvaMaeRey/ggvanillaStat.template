@@ -1,0 +1,271 @@
+---
+output: 
+  github_document:
+    toc: TRUE
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Welcome to the ggtedious workshop!
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+Let's build a cool ggplot2 extension function.  And then let's put it in a package. And test!  Maybe it will be tedious, but more fun in good company?
+
+> 'Testing your code can be painful and tedious, but it greatly increases the quality of your code.'  - testthat introduction (probably Hadley Wickham)
+
+In this workshop, we'll build and strengthen package building and test writing muscles. 
+
+
+<!-- 'Error messages are a huge part of your user interface.  I mean you'd like to think they aren't, but they they are. - https://youtu.be/5LktoXh7WvY?si=bIYS6NLYrGey8o_7&t=2248 -->
+
+<!-- Building a simple, straightforward extension in good company (workshop!) will provide a misery-loves-company occasion to build a correct package and build/strengthen testing muscles.  -->
+
+https://angeladuckworth.com/grit-scale/
+
+Meeting objectives:
+
+<!-- 0. My pre-step: Figure out what best practices for ggplot2 extension packages and testing are; and/or figure out some experts to ask for help. -->
+
+1. Practice a `compute_group` easy geom extension by creating geom_post().
+2. Put them in a package using best practices.
+3. Meet like-minded stats educators, ggplot2 extenders, and package developers. 
+
+Prerequisite:
+
+Having written a 'compute group' geom extension.  See:
+https://evamaerey.github.io/mytidytuesday/2022-01-03-easy-geom-recipes/easy_geom_recipes.html  Seasoned R/ggplot2 users mostly spent ~ 15 minutes on each recipe.
+
+
+# Part 1. Work on functionality
+
+## Step 0. Do it with base ggplot2 *can become problem statement later*
+
+```{r use_base_ggplot2}
+prize_wheel <- data.frame(probs = c(.7, .2, .1), payout = c(0, 1, 5))
+
+library(ggplot2)
+ggplot(prize_wheel) + 
+  aes(x = payout, y = probs) + 
+  geom_point() + 
+  aes(xend = payout, yend = 0) + 
+  geom_segment()
+
+```
+
+## Step 0.b Write like-to-have code *code chunk option eval = F*
+
+```{r, eval = F}
+# would show just line
+ggplot(prize_wheel) + 
+  aes(x = payout, y = probs) + 
+  geom_post()
+
+# line and dot
+ggplot(prize_wheel) + 
+  aes(x = payout, y = probs) + 
+  geom_point() + 
+  geom_lollipop()
+```
+
+
+## Step 1. Write compute group function and test
+
+reference: https://evamaerey.github.io/mytidytuesday/2022-01-03-easy-geom-recipes/easy_geom_recipes.html
+
+```{r compute_group_post}
+
+```
+
+
+
+```{r try_compute_group_post}
+
+
+```
+
+## Step 2. Pass to ggproto object
+
+```{r ggproto}
+
+
+```
+
+## Step 3. Write geom_post() functions
+
+```{r geom_post}
+
+
+```
+
+## Step 3.1 Bonus, write geom_lollipop with list mechanism
+
+```{r geom_lollipop}
+geom_lollipop <- function(...){
+
+  list(  
+  geom_post(...),
+  geom_point(...)
+  )
+  
+}
+
+
+```
+
+## Step 4. Test it out enjoy! (possibly basis of examples and tests)
+
+```{r}
+
+
+```
+
+## Step 5. Write messages/warnings etc in the function
+
+# Part II. Packaging and documentation  🚧 ✅
+
+## Phase 1. Minimal working package
+
+### Bit A. Created package archetecture, running `devtools::create(".")` in interactive session. 🚧 ✅
+
+
+```{r, eval = F}
+devtools::create(".")
+```
+
+### Bit B. Added roxygen skeleton? 🚧 ✅
+
+Use a roxygen skeleton for auto documentation and making sure proposed functions are *exported*.  Generally, early on, I don't do much (anything) in terms of filling in the skeleton for documentation, because things may change.
+
+### Bit C. Managed dependencies ? 🚧 ✅
+
+Package dependencies managed, i.e. `depend::function()` in proposed functions and declared in the DESCRIPTION
+
+```{r, eval = F}
+usethis::use_package("ggplot2")
+```
+
+
+### Bit D. Moved functions R folder? 🚧 ✅
+
+Use new {readme2pkg} function to do this from readme...
+
+```{r, eval = F}
+library(tidyverse)
+readme2pkg::chunk_to_r("geom_post")
+```
+
+### Bit E. Run `devtools::check()` and addressed errors. 🚧 ✅
+
+```{r, eval = F}
+devtools::check(pkg = ".")
+```
+
+### Bit F. Build package 🚧 ✅
+
+```{r, eval = F}
+devtools::build()
+```
+
+
+### Bit G. Write traditional README that uses built package (also serves as a test of build. 🚧 ✅
+
+The goal of the {ggtedious} package is to make it easy to draw posts (and to learn about package building and testing)
+
+Install package with:
+
+```
+remotes::install_github("EvaMaeRey/ggtedious")
+```
+
+Once functions are exported you can remove go to two colons, and when things are are really finalized, then go without colons (and rearrange your readme...)
+
+```{r, eval = F}
+library(ggtedious)  
+
+
+```
+
+
+
+
+### Bit H. Chosen a license? 🚧 ✅
+
+
+```{r, eval = F}
+usethis::use_mit_license()
+```
+
+### Bit I. Add lifecycle badge (experimental) 🚧 ✅
+
+```{r, eval = F}
+usethis::use_lifecycle_badge("experimental")
+```
+
+
+## Phase 2: Listen & iterate 🚧 ✅
+
+Try to get feedback from experts on API, implementation, default decisions.  Is there already work that solves this problem? 
+
+
+## Phase 3: Let things settle
+
+### Bit A. Settle on examples.  Put them in the roxygen skeleton and readme. 🚧 ✅
+
+### Bit B. Written formal tests of functions and save to test that folders 🚧 ✅
+
+
+That would look like this...
+
+```{r test_calc_times_two_works, eval = F}
+library(testthat)
+
+test_that("calc times 2 works", {
+  expect_equal(times_two(4), 8)
+  expect_equal(times_two(5), 10)
+  
+})
+```
+
+
+```{r, eval = F}
+readme2pkg::chunk_to_tests_testthat("test_calc_times_two_works")
+```
+
+
+### Bit C. Added a description and author information in the DESCRIPTION file 🚧 ✅
+
+### Bit D. Addressed *all* notes, warnings and errors. 🚧 
+
+## Phase 4. Promote to wider audience...
+
+### Bit A. Package website built?  ✅
+
+```{r, eval = F}
+usethis::use_pkgdown()
+pkgdown::build_site()
+```
+
+
+### Bit B. Package website deployed? 🚧 ✅
+
+## Phase 5: Harden/commit
+
+### Submit to CRAN/RUniverse? 🚧 
+
+# Appendix: Reports, Environment
+
+## Edited Description file?
+
+```{r, eval = F}
+readLines("DESCRIPTION")
+```
+
