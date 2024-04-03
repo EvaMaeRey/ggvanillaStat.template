@@ -9,10 +9,8 @@
       - [Step 1. Write compute group function and
         test](#step-1-write-compute-group-function-and-test)
       - [Step 2. Pass to ggproto object](#step-2-pass-to-ggproto-object)
-      - [Step 3. Write geom\_post()
-        functions](#step-3-write-geom_post-functions)
-      - [Step 3.1 Bonus, write geom\_lollipop with list
-        mechanism](#step-31-bonus-write-geom_lollipop-with-list-mechanism)
+      - [Step 3. Write user-facing geom\_pointmeans()
+        function](#step-3-write-user-facing-geom_pointmeans-function)
       - [Step 4. Test it out enjoy\! (possibly basis of examples and
         tests)](#step-4-test-it-out-enjoy-possibly-basis-of-examples-and-tests)
       - [Step 5. Write messages/warnings etc in the
@@ -71,94 +69,133 @@
 
 <!-- badges: end -->
 
-Let’s build a cool ggplot2 extension function. And then let’s put it in
-a package. And test\! Maybe it will be tedious, but more fun in good
-company?
-
-> ‘Testing your code can be painful and tedious, but it greatly
-> increases the quality of your code.’ - testthat introduction (probably
-> Hadley Wickham)
-
-In this workshop, we’ll build and strengthen package building and test
-writing muscles.
-
-<!-- 'Error messages are a huge part of your user interface.  I mean you'd like to think they aren't, but they they are. - https://youtu.be/5LktoXh7WvY?si=bIYS6NLYrGey8o_7&t=2248 -->
-
-<!-- Building a simple, straightforward extension in good company (workshop!) will provide a misery-loves-company occasion to build a correct package and build/strengthen testing muscles.  -->
-
-<https://angeladuckworth.com/grit-scale/>
-
-Meeting objectives:
-
-<!-- 0. My pre-step: Figure out what best practices for ggplot2 extension packages and testing are; and/or figure out some experts to ask for help. -->
-
-1.  Practice a `compute_group` easy geom extension by creating
-    geom\_post().
-2.  Put them in a package using best practices.
-3.  Meet like-minded stats educators, ggplot2 extenders, and package
-    developers.
-
-Prerequisite:
-
-Having written a ‘compute group’ geom extension. See:
-<https://evamaerey.github.io/mytidytuesday/2022-01-03-easy-geom-recipes/easy_geom_recipes.html>
-Seasoned R/ggplot2 users mostly spent \~ 15 minutes on each recipe.
+Let’s build a vanilla ggplot2 Stat and use it in an extension function.
 
 # Part 1. Work on functionality
 
 ## Step 0. Do it with base ggplot2 *can become problem statement later*
 
 ``` r
-prize_wheel <- data.frame(probs = c(.7, .2, .1), payout = c(0, 1, 5))
+library(tidyverse)
+#> ── Attaching core tidyverse packages ─────────────────── tidyverse 2.0.0.9000 ──
+#> ✔ dplyr     1.1.0          ✔ readr     2.1.4     
+#> ✔ forcats   1.0.0          ✔ stringr   1.5.0     
+#> ✔ ggplot2   3.4.4.9000     ✔ tibble    3.2.1     
+#> ✔ lubridate 1.9.2          ✔ tidyr     1.3.0     
+#> ✔ purrr     1.0.1          
+#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+#> ✖ dplyr::filter() masks stats::filter()
+#> ✖ dplyr::lag()    masks stats::lag()
+#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 
-library(ggplot2)
-ggplot(prize_wheel) + 
-  aes(x = payout, y = probs) + 
+cars_means_df <- cars |>
+  summarise(dist = mean(dist),
+            speed = mean(speed))
+
+ggplot(data = cars) + 
+  aes(speed, dist) + 
   geom_point() + 
-  aes(xend = payout, yend = 0) + 
-  geom_segment()
+  geom_point(data = cars_means_df, size = 8)
 ```
 
 ![](README_files/figure-gfm/use_base_ggplot2-1.png)<!-- -->
 
 ## Step 0.b Write like-to-have code *code chunk option eval = F*
 
-``` r
-# would show just line
-ggplot(prize_wheel) + 
-  aes(x = payout, y = probs) + 
-  geom_post()
-
-# line and dot
-ggplot(prize_wheel) + 
-  aes(x = payout, y = probs) + 
-  geom_point() + 
-  geom_lollipop()
-```
+    ggplot(data = cars) + 
+      aes(speed, dist) + 
+      geom_point() + 
+      geom_pointmeans(size = 8)
 
 ## Step 1. Write compute group function and test
+
+## Step 2. Pass to ggproto object
 
 reference:
 <https://evamaerey.github.io/mytidytuesday/2022-01-03-easy-geom-recipes/easy_geom_recipes.html>
 
-## Step 2. Pass to ggproto object
+``` r
+compute_group_means <- function(data, scales){
+  
+  data |>
+    summarise(x = mean(x),
+              y = mean(y))
+  
+}
 
-## Step 3. Write geom\_post() functions
 
-## Step 3.1 Bonus, write geom\_lollipop with list mechanism
+StatMeans <- ggproto(`_class` = "StatMeans",
+                     `_inherit` = Stat,
+                     compute_group = compute_group_means,
+                     required_aes = c("x", "y"))
+```
 
 ``` r
-geom_lollipop <- function(...){
+cars |>
+  select(x = speed, y = dist) |>
+  compute_group_means()
+#>      x     y
+#> 1 15.4 42.98
+```
 
-  list(  
-  geom_post(...),
-  geom_point(...)
+``` r
+ggplot(data = cars) + 
+  aes(speed, dist) + 
+  geom_point() + 
+  layer(stat = StatMeans, 
+        geom = GeomPoint, 
+        position = "identity",
+        params = list(size = 8)) 
+```
+
+![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
+``` r
+
+# defining params is not always required.
+# we just use it hear so that our means point is obvious
+```
+
+## Step 3. Write user-facing geom\_pointmeans() function
+
+``` r
+geom_pointmeans <- function(mapping = NULL, 
+                            data = NULL,
+                            position = "identity", 
+                            na.rm = FALSE,
+                            show.legend = NA,
+                            inherit.aes = TRUE, ...) {
+  ggplot2::layer(
+    stat = StatMeans,        # proto object from step 2
+    geom = ggplot2::GeomPoint,   # inherit other behavior
+    data = data, 
+    mapping = mapping,
+    position = position, 
+    show.legend = show.legend, 
+    inherit.aes = inherit.aes,
+    params = list(na.rm = na.rm, ...)
   )
-  
 }
 ```
 
 ## Step 4. Test it out enjoy\! (possibly basis of examples and tests)
+
+``` r
+ggplot(data = cars) + 
+  aes(speed, dist) + 
+  geom_point() + 
+  geom_pointmeans(size = 8)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+``` r
+
+last_plot() + 
+  aes(color = dist > 50)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
 
 ## Step 5. Write messages/warnings etc in the function
 
@@ -216,14 +253,14 @@ The goal of the {ggtedious} package is to make it easy to draw posts
 
 Install package with:
 
-    remotes::install_github("EvaMaeRey/ggtedious")
+    remotes::install_github("EvaMaeRey/ggvanilla")
 
 Once functions are exported you can remove go to two colons, and when
 things are are really finalized, then go without colons (and rearrange
 your readme…)
 
 ``` r
-library(ggtedious)  
+library(ggvanilla)  
 ```
 
 ### Bit H. Chosen a license? 🚧 ✅
